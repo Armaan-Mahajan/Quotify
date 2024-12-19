@@ -30,7 +30,6 @@ class _MainAppState extends State<MainApp> with TickerProviderStateMixin {
     super.initState();
     fetchData();
 
-    // Initialize animation controllers and animations for the blobs
     blobController1 = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 10),
@@ -125,7 +124,6 @@ class _MainAppState extends State<MainApp> with TickerProviderStateMixin {
             },
           ),
 
-          // Main content
           Center(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -177,14 +175,13 @@ class _MainAppState extends State<MainApp> with TickerProviderStateMixin {
                                   padding: const EdgeInsets.all(20.0),
                                   margin: const EdgeInsets.symmetric(horizontal: 20.0),
                                   decoration: BoxDecoration(
-                                    color: const Color(0xFFF9F1E2),
+                                    color: const Color(0xFFFFFFFF),
                                     borderRadius: BorderRadius.circular(16.0),
-                                    border: Border.all(color: Colors.grey.shade400, width: 1.0),
+                                    border: Border.all(color: Colors.grey.shade400, width: 1.5),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: Colors.black.withOpacity(0.2),
-                                        blurRadius: 12,
-                                        offset: const Offset(0, 8),
+                                        color: Colors.black.withAlpha(0), //To be Altered later if required
+                                        blurRadius: 12
                                       ),
                                     ],
                                   ),
@@ -282,16 +279,14 @@ class BlobPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    // Blob Paints
     final blob1Paint = Paint()
-      ..color = const Color(0xFFE8D59E).withOpacity(0.5)
+      ..color = const Color(0xFFE8D59E).withAlpha(129)
       ..style = PaintingStyle.fill;
 
     final blob2Paint = Paint()
-      ..color = const Color(0xFFD9BBB0).withOpacity(0.5)
+      ..color = const Color(0xFFD9BBB0).withAlpha(179)
       ..style = PaintingStyle.fill;
 
-    // Blob Centers
     final blob1Center = Offset(
       blob1Position.dx * size.width,
       blob1Position.dy * size.height,
@@ -301,17 +296,14 @@ class BlobPainter extends CustomPainter {
       blob2Position.dy * size.height,
     );
 
-    // Draw blurred blobs with BackdropFilter
     canvas.saveLayer(
       Rect.fromLTWH(0, 0, size.width, size.height),
       Paint(),
     );
 
-    // Apply the blur for blob1
     canvas.drawCircle(blob1Center, size.width * 0.3, blob1Paint);
     canvas.restore();
 
-    // Apply the blur for blob2
     canvas.saveLayer(
       Rect.fromLTWH(0, 0, size.width, size.height),
       Paint(),
