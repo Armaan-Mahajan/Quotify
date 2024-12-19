@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:quotify/quotes.dart';
 
-
 void main() => runApp(const MyApp());
 
 class MyApp extends StatelessWidget {
@@ -13,7 +12,6 @@ class MyApp extends StatelessWidget {
       title: 'Flutter App',
       home: Scaffold(
         body: MainApp(),
-
       ),
     );
   }

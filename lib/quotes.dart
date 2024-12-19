@@ -4,7 +4,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'dart:math';
-import 'package:flutter/services.dart'; // Clipboard API
+import 'package:flutter/services.dart';
 
 class MainApp extends StatefulWidget {
   const MainApp({super.key});
@@ -17,6 +17,7 @@ class _MainAppState extends State<MainApp> with TickerProviderStateMixin {
   List<Map<String, String>> quoteHistory = [];
   int currentIndex = -1;
   String quote = 'Swipe to get a random quote!';
+  String speaker = '';
   bool isLoading = false;
   double opacity = 1.0;
 
@@ -73,12 +74,14 @@ class _MainAppState extends State<MainApp> with TickerProviderStateMixin {
       if (response.statusCode == 200) {
         var data = json.decode(response.body);
         String newQuote = data['quote'];
+        String newSpeaker = data['speaker'];
 
         setState(() {
           quote = newQuote;
+          speaker = newSpeaker;
 
           if (currentIndex == quoteHistory.length - 1) {
-            quoteHistory.add({'quote': newQuote});
+            quoteHistory.add({'quote': newQuote, 'speaker': newSpeaker});
             currentIndex++;
           }
 
@@ -145,58 +148,88 @@ class _MainAppState extends State<MainApp> with TickerProviderStateMixin {
                         style: GoogleFonts.playfairDisplay(
                           fontWeight: FontWeight.bold,
                           fontSize: 32,
-                          color: const Color(0xFF331C08),
                         ),
                       ),
                     ],
                   ),
                 ),
                 Expanded(
-                  child: Center(
-                    child: GestureDetector(
-                      onPanEnd: (details) {
-                        if (details.velocity.pixelsPerSecond.dx < 0) {
-                          showNextQuote();
-                        } else if (details.velocity.pixelsPerSecond.dx > 0) {
-                          showPreviousQuote();
-                        }
-                      },
-                      child: AnimatedOpacity(
-                        opacity: opacity,
-                        duration: const Duration(milliseconds: 500),
-                        child: Container(
-                          padding: const EdgeInsets.all(20.0),
-                          margin: const EdgeInsets.symmetric(horizontal: 20.0),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFFFFFFF),
-                            borderRadius: BorderRadius.circular(16.0),
-                            border: Border.all(color: Colors.grey.shade400, width: 1.5),
-                            boxShadow: [
-                              BoxShadow(
-                                  color: Colors.black.withAlpha(0), // To be Altered later if required
-                                  blurRadius: 12),
+                  child: GestureDetector(
+                    onPanEnd: (details) {
+                      if (details.velocity.pixelsPerSecond.dx < 0) {
+                        showNextQuote();
+                      } else if (details.velocity.pixelsPerSecond.dx > 0) {
+                        showPreviousQuote();
+                      }
+                    },
+                    child: Stack(
+                      children: [
+                        AnimatedOpacity(
+                          opacity: opacity,
+                          duration: const Duration(milliseconds: 500),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(20.0),
+                                margin: const EdgeInsets.symmetric(horizontal: 20.0),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFFFFFFF),
+                                  borderRadius: BorderRadius.circular(16.0),
+                                  border: Border.all(color: Colors.grey.shade400, width: 1.5),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withAlpha(0),
+                                      blurRadius: 12,
+                                    ),
+                                  ],
+                                ),
+                                child: Text(
+                                  quote,
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontFamily: 'Noto Sans',
+                                    fontSize: 24,
+                                    color: const Color(0xff331c08),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 7.5),
+                              Container(
+                                padding: const EdgeInsets.all(10.0),
+                                margin: const EdgeInsets.symmetric(horizontal: 20.0),
+                                decoration: BoxDecoration(
+                                  color: const Color(0x00f7e6ca),
+                                  borderRadius: BorderRadius.circular(16.0),
+                                ),
+                                child: Text(
+                                  speaker,
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontFamily: 'Noto Sans',
+                                    fontSize: 18,
+                                    color: const Color(0xff503823),
+                                  ),
+                                ),
+                              ),
                             ],
                           ),
-                          child: Text(
-                            quote,
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontFamily: 'Noto Sans',
-                              fontSize: 24,
-                              color: const Color(0xff331c08),
-                              fontFeatures: [],
-                            ),
-                          )
                         ),
-                      ),
+                        if (isLoading)
+                          Center(
+                            child: CircularProgressIndicator(
+                              color: const Color(0xFF4A3F3A),
+                            ),
+                          ),
+                      ],
                     ),
                   ),
                 ),
                 Padding(
-                  padding: const EdgeInsets.only(bottom: 20.0), // Position the button at the bottom
+                  padding: const EdgeInsets.only(bottom: 20.0),
                   child: ElevatedButton(
                     onPressed: () {
-                      Clipboard.setData(ClipboardData(text: quote));
+                      Clipboard.setData(ClipboardData(text: '$quote - $speaker'));
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
                           content: Text('Quote copied to clipboard!'),
@@ -205,12 +238,12 @@ class _MainAppState extends State<MainApp> with TickerProviderStateMixin {
                       );
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFFFF0D8), // Button color
-                      foregroundColor: const Color(0xFF331C08), // Icon and text color
+                      backgroundColor: const Color(0xFFFFF0D8),
+                      foregroundColor: const Color(0xFF503823),
                       shape: const CircleBorder(),
                       padding: const EdgeInsets.all(16),
                     ),
-                    child: const Icon(Icons.copy, size: 28),
+                    child: const Icon(Icons.copy, size: 28, color: Color(0xFF4A3F3A)),
                   ),
                 ),
               ],
@@ -232,6 +265,7 @@ class _MainAppState extends State<MainApp> with TickerProviderStateMixin {
         setState(() {
           currentIndex--;
           quote = quoteHistory[currentIndex]['quote']!;
+          speaker = quoteHistory[currentIndex]['speaker'] ?? '';
           isLoading = false;
           opacity = 1.0;
         });
@@ -250,6 +284,7 @@ class _MainAppState extends State<MainApp> with TickerProviderStateMixin {
         setState(() {
           currentIndex++;
           quote = quoteHistory[currentIndex]['quote']!;
+          speaker = quoteHistory[currentIndex]['speaker'] ?? '';
           isLoading = false;
           opacity = 1.0;
         });
