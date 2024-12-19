@@ -4,7 +4,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'dart:math';
-import 'package:flutter/services.dart';
+//import 'package:flutter/services.dart';
 
 class MainApp extends StatefulWidget {
   const MainApp({super.key});
@@ -29,8 +29,6 @@ class _MainAppState extends State<MainApp> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
-    fetchData();
-
     blobController1 = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 10),
@@ -44,12 +42,14 @@ class _MainAppState extends State<MainApp> with TickerProviderStateMixin {
     blobAnimation1 = Tween<Offset>(
       begin: Offset(0.2, 0.3),
       end: Offset(0.8, 0.6),
-    ).animate(CurvedAnimation(parent: blobController1, curve: Curves.easeInOut));
+    ).animate(
+        CurvedAnimation(parent: blobController1, curve: Curves.easeInOut));
 
     blobAnimation2 = Tween<Offset>(
       begin: Offset(0.8, 0.7),
       end: Offset(0.2, 0.4),
-    ).animate(CurvedAnimation(parent: blobController2, curve: Curves.easeInOut));
+    ).animate(
+        CurvedAnimation(parent: blobController2, curve: Curves.easeInOut));
   }
 
   @override
@@ -67,7 +67,8 @@ class _MainAppState extends State<MainApp> with TickerProviderStateMixin {
 
     var random = Random();
     int indexNum = random.nextInt(485);
-    String url = ('https://appcollection.in/quotify/fetch-quote.php?id=$indexNum');
+    String url =
+        'https://appcollection.in/quotify/fetch-quote.php?id=$indexNum';
 
     try {
       final http.Response response = await http.get(Uri.parse(url));
@@ -77,14 +78,13 @@ class _MainAppState extends State<MainApp> with TickerProviderStateMixin {
         String newSpeaker = data['speaker'];
 
         setState(() {
-          quote = newQuote;
-          speaker = newSpeaker;
-
           if (currentIndex == quoteHistory.length - 1) {
             quoteHistory.add({'quote': newQuote, 'speaker': newSpeaker});
             currentIndex++;
           }
 
+          quote = newQuote;
+          speaker = newSpeaker;
           isLoading = false;
         });
 
@@ -107,6 +107,26 @@ class _MainAppState extends State<MainApp> with TickerProviderStateMixin {
     }
   }
 
+  void navigateHistory(int direction) {
+    if (direction == -1 && currentIndex > 0) {
+      // Go to the previous quote
+      setState(() {
+        currentIndex--;
+        quote = quoteHistory[currentIndex]['quote']!;
+        speaker = quoteHistory[currentIndex]['speaker']!;
+      });
+    } else if (direction == 1 && currentIndex < quoteHistory.length - 1) {
+      // Go to the next quote
+      setState(() {
+        currentIndex++;
+        quote = quoteHistory[currentIndex]['quote']!;
+        speaker = quoteHistory[currentIndex]['speaker']!;
+      });
+    } else if (direction == 1) {
+      fetchData();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -125,64 +145,59 @@ class _MainAppState extends State<MainApp> with TickerProviderStateMixin {
               );
             },
           ),
-          Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Container(
-                  margin: const EdgeInsets.symmetric(vertical: 20.0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Image.asset(
-                        'assets/images/applogo.png',
-                        width: 54,
-                        height: 54,
-                        fit: BoxFit.cover,
+          Column(
+            children: [
+              Container(
+                margin: const EdgeInsets.symmetric(vertical: 20.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Image.asset(
+                      'assets/images/applogo.png',
+                      width: 54,
+                      height: 54,
+                      fit: BoxFit.cover,
+                    ),
+                    const SizedBox(width: 10),
+                    Text(
+                      'Quotify',
+                      style: GoogleFonts.playfairDisplay(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 32,
                       ),
-                      const SizedBox(width: 10),
-                      Text(
-                        'Quotify',
-                        style: GoogleFonts.playfairDisplay(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 32,
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-                Expanded(
+              ),
+                 Expanded(
                   child: GestureDetector(
-                    onPanEnd: (details) {
-                      if (details.velocity.pixelsPerSecond.dx < 0) {
-                        showNextQuote();
-                      } else if (details.velocity.pixelsPerSecond.dx > 0) {
-                        showPreviousQuote();
-                      }
-                    },
-                    child: Stack(
-                      children: [
-                        AnimatedOpacity(
-                          opacity: opacity,
-                          duration: const Duration(milliseconds: 500),
+                  onPanUpdate: (details) {
+    if (details.delta.dx > 0) {
+    navigateHistory(-1);
+    } else if (details.delta.dx < 0) {
+    navigateHistory(1);
+    }
+    },
+                  child: Stack(
+                    children: [
+                      AnimatedOpacity(
+                        opacity: opacity,
+                        duration: const Duration(milliseconds: 500),
+                        child: Center(
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Container(
                                 padding: const EdgeInsets.all(20.0),
-                                margin: const EdgeInsets.symmetric(horizontal: 20.0),
+                                margin: const EdgeInsets.symmetric(
+                                    horizontal: 20.0),
                                 decoration: BoxDecoration(
                                   color: const Color(0xFFFFFFFF),
                                   borderRadius: BorderRadius.circular(16.0),
-                                  border: Border.all(color: Colors.grey.shade400, width: 1.5),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withAlpha(0),
-                                      blurRadius: 12,
-                                    ),
-                                  ],
+                                  border: Border.all(
+                                    color: Colors.grey.shade400,
+                                    width: 1.5,
+                                  ), // Added border for the quote container
                                 ),
                                 child: Text(
                                   quote,
@@ -195,103 +210,31 @@ class _MainAppState extends State<MainApp> with TickerProviderStateMixin {
                                 ),
                               ),
                               const SizedBox(height: 7.5),
-                              Container(
-                                padding: const EdgeInsets.all(10.0),
-                                margin: const EdgeInsets.symmetric(horizontal: 20.0),
-                                decoration: BoxDecoration(
-                                  color: const Color(0x00f7e6ca),
-                                  borderRadius: BorderRadius.circular(16.0),
-                                ),
-                                child: Text(
-                                  speaker,
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    fontFamily: 'Noto Sans',
+                              const SizedBox(height: 7.5),
+                              Text(
+                                speaker,
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
                                     fontSize: 18,
-                                    color: const Color(0xff503823),
-                                  ),
-                                ),
+                                    color: const Color(0xff503823)),
                               ),
                             ],
                           ),
                         ),
-                        if (isLoading)
-                          Center(
-                            child: CircularProgressIndicator(
-                              color: const Color(0xFF4A3F3A),
-                            ),
-                          ),
-                      ],
-                    ),
+                      ),
+                      if (isLoading)
+                        const Center(child: CircularProgressIndicator(
+                          color: Color(0xff4a4540),
+                        )),
+                    ],
                   ),
                 ),
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 20.0),
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Clipboard.setData(ClipboardData(text: '$quote - $speaker'));
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Quote copied to clipboard!'),
-                          behavior: SnackBarBehavior.floating,
-                        ),
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFFFF0D8),
-                      foregroundColor: const Color(0xFF503823),
-                      shape: const CircleBorder(),
-                      padding: const EdgeInsets.all(16),
-                    ),
-                    child: const Icon(Icons.copy, size: 28, color: Color(0xFF4A3F3A)),
-                  ),
-                ),
-              ],
-            ),
+                 ),
+            ],
           ),
         ],
       ),
     );
-  }
-
-  void showPreviousQuote() {
-    if (currentIndex > 0) {
-      setState(() {
-        isLoading = true;
-        opacity = 0.0;
-      });
-
-      Future.delayed(const Duration(milliseconds: 300), () {
-        setState(() {
-          currentIndex--;
-          quote = quoteHistory[currentIndex]['quote']!;
-          speaker = quoteHistory[currentIndex]['speaker'] ?? '';
-          isLoading = false;
-          opacity = 1.0;
-        });
-      });
-    }
-  }
-
-  void showNextQuote() {
-    if (currentIndex < quoteHistory.length - 1) {
-      setState(() {
-        isLoading = true;
-        opacity = 0.0;
-      });
-
-      Future.delayed(const Duration(milliseconds: 300), () {
-        setState(() {
-          currentIndex++;
-          quote = quoteHistory[currentIndex]['quote']!;
-          speaker = quoteHistory[currentIndex]['speaker'] ?? '';
-          isLoading = false;
-          opacity = 1.0;
-        });
-      });
-    } else {
-      fetchData();
-    }
   }
 }
 
@@ -323,21 +266,8 @@ class BlobPainter extends CustomPainter {
       blob2Position.dy * size.height,
     );
 
-    canvas.saveLayer(
-      Rect.fromLTWH(0, 0, size.width, size.height),
-      Paint(),
-    );
-
     canvas.drawCircle(blob1Center, size.width * 0.3, blob1Paint);
-    canvas.restore();
-
-    canvas.saveLayer(
-      Rect.fromLTWH(0, 0, size.width, size.height),
-      Paint(),
-    );
-
     canvas.drawCircle(blob2Center, size.width * 0.25, blob2Paint);
-    canvas.restore();
   }
 
   @override
