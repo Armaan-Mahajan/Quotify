@@ -22,3 +22,6 @@ By 20th December (Delayed)
     - This is reflected on the screen
     - If user attempts to go forward to a new random quote, or back in their quote history, the app provides a warning
 - Share feature also has to be added- users share the quote in .png format
+
+By 21st December:
+- Make the history navigation system work fully, and more advanced
