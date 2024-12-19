@@ -14,9 +14,11 @@ By 18th December:
 - Animations to be added behind the quotes- use E8D59E, D9BBB0 [✓]
 
 By 19th December:
+- Copy to clipboard: Quote and Speaker are copied to clipboard: “$quote - $speakerName” [✓]
+
+By 20th December (Delayed)
 - Custom quote
     - User inputs a quote and speaker in a separate menu
     - This is reflected on the screen
     - If user attempts to go forward to a new random quote, or back in their quote history, the app provides a warning
-- Copy to clipboard: Quote and Speaker are copied to clipboard: “$quote - $speakerName”
 - Share feature also has to be added- users share the quote in .png format
