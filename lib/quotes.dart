@@ -4,6 +4,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'dart:math';
+import 'package:flutter/services.dart'; // Clipboard API
 
 class MainApp extends StatefulWidget {
   const MainApp({super.key});
@@ -16,7 +17,6 @@ class _MainAppState extends State<MainApp> with TickerProviderStateMixin {
   List<Map<String, String>> quoteHistory = [];
   int currentIndex = -1;
   String quote = 'Swipe to get a random quote!';
-  String person = '';
   bool isLoading = false;
   double opacity = 1.0;
 
@@ -73,14 +73,12 @@ class _MainAppState extends State<MainApp> with TickerProviderStateMixin {
       if (response.statusCode == 200) {
         var data = json.decode(response.body);
         String newQuote = data['quote'];
-        String newPerson = data['speaker'];
 
         setState(() {
           quote = newQuote;
-          person = newPerson;
 
           if (currentIndex == quoteHistory.length - 1) {
-            quoteHistory.add({'quote': newQuote, 'person': newPerson});
+            quoteHistory.add({'quote': newQuote});
             currentIndex++;
           }
 
@@ -109,6 +107,7 @@ class _MainAppState extends State<MainApp> with TickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0x00f7e6ca),
       body: Stack(
         children: [
           AnimatedBuilder(
@@ -123,7 +122,6 @@ class _MainAppState extends State<MainApp> with TickerProviderStateMixin {
               );
             },
           ),
-
           Center(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -147,7 +145,7 @@ class _MainAppState extends State<MainApp> with TickerProviderStateMixin {
                         style: GoogleFonts.playfairDisplay(
                           fontWeight: FontWeight.bold,
                           fontSize: 32,
-                          color: const Color(0xFFAD9C8E),
+                          color: const Color(0xFF331C08),
                         ),
                       ),
                     ],
@@ -155,68 +153,64 @@ class _MainAppState extends State<MainApp> with TickerProviderStateMixin {
                 ),
                 Expanded(
                   child: Center(
-                    child: Stack(
-                      children: [
-                        GestureDetector(
-                          onPanEnd: (details) {
-                            if (details.velocity.pixelsPerSecond.dx < 0) {
-                              showNextQuote();
-                            } else if (details.velocity.pixelsPerSecond.dx > 0) {
-                              showPreviousQuote();
-                            }
-                          },
-                          child: AnimatedOpacity(
-                            opacity: opacity,
-                            duration: const Duration(milliseconds: 500),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.all(20.0),
-                                  margin: const EdgeInsets.symmetric(horizontal: 20.0),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFFFFFFF),
-                                    borderRadius: BorderRadius.circular(16.0),
-                                    border: Border.all(color: Colors.grey.shade400, width: 1.5),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.black.withAlpha(0), //To be Altered later if required
-                                        blurRadius: 12
-                                      ),
-                                    ],
-                                  ),
-                                  child: Text(
-                                    quote,
-                                    textAlign: TextAlign.center,
-                                    style: GoogleFonts.robotoSlab(
-                                      fontWeight: FontWeight.w600,
-                                      fontSize: 24,
-                                      color: Color(0xff331c08),
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(height: 10),
-                                Text(
-                                  '- $person',
-                                  textAlign: TextAlign.center,
-                                  style: GoogleFonts.lora(
-                                    fontWeight: FontWeight.w500,
-                                    fontSize: 18,
-                                    color: const Color(0xFFAD9C8E),
-                                  ),
-                                ),
-                              ],
-                            ),
+                    child: GestureDetector(
+                      onPanEnd: (details) {
+                        if (details.velocity.pixelsPerSecond.dx < 0) {
+                          showNextQuote();
+                        } else if (details.velocity.pixelsPerSecond.dx > 0) {
+                          showPreviousQuote();
+                        }
+                      },
+                      child: AnimatedOpacity(
+                        opacity: opacity,
+                        duration: const Duration(milliseconds: 500),
+                        child: Container(
+                          padding: const EdgeInsets.all(20.0),
+                          margin: const EdgeInsets.symmetric(horizontal: 20.0),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFFFFFF),
+                            borderRadius: BorderRadius.circular(16.0),
+                            border: Border.all(color: Colors.grey.shade400, width: 1.5),
+                            boxShadow: [
+                              BoxShadow(
+                                  color: Colors.black.withAlpha(0), // To be Altered later if required
+                                  blurRadius: 12),
+                            ],
                           ),
+                          child: Text(
+                            quote,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontFamily: 'Noto Sans',
+                              fontSize: 24,
+                              color: const Color(0xff331c08),
+                              fontFeatures: [],
+                            ),
+                          )
                         ),
-                        if (isLoading)
-                          Center(
-                            child: CircularProgressIndicator(
-                              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFAD9C8E)),
-                            ),
-                          ),
-                      ],
+                      ),
                     ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 20.0), // Position the button at the bottom
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Clipboard.setData(ClipboardData(text: quote));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Quote copied to clipboard!'),
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFFFF0D8), // Button color
+                      foregroundColor: const Color(0xFF331C08), // Icon and text color
+                      shape: const CircleBorder(),
+                      padding: const EdgeInsets.all(16),
+                    ),
+                    child: const Icon(Icons.copy, size: 28),
                   ),
                 ),
               ],
@@ -238,7 +232,6 @@ class _MainAppState extends State<MainApp> with TickerProviderStateMixin {
         setState(() {
           currentIndex--;
           quote = quoteHistory[currentIndex]['quote']!;
-          person = quoteHistory[currentIndex]['person']!;
           isLoading = false;
           opacity = 1.0;
         });
@@ -257,7 +250,6 @@ class _MainAppState extends State<MainApp> with TickerProviderStateMixin {
         setState(() {
           currentIndex++;
           quote = quoteHistory[currentIndex]['quote']!;
-          person = quoteHistory[currentIndex]['person']!;
           isLoading = false;
           opacity = 1.0;
         });
