@@ -169,15 +169,15 @@ class _MainAppState extends State<MainApp> with TickerProviderStateMixin {
                   ],
                 ),
               ),
-                 Expanded(
-                  child: GestureDetector(
+              Expanded(
+                child: GestureDetector(
                   onPanUpdate: (details) {
-    if (details.delta.dx > 0) {
-    navigateHistory(-1);
-    } else if (details.delta.dx < 0) {
-    navigateHistory(1);
-    }
-    },
+                    if (details.delta.dx > 0) {
+                      navigateHistory(-1);
+                    } else if (details.delta.dx < 0) {
+                      navigateHistory(1);
+                    }
+                  },
                   child: Stack(
                     children: [
                       AnimatedOpacity(
@@ -223,13 +223,14 @@ class _MainAppState extends State<MainApp> with TickerProviderStateMixin {
                         ),
                       ),
                       if (isLoading)
-                        const Center(child: CircularProgressIndicator(
+                        const Center(
+                            child: CircularProgressIndicator(
                           color: Color(0xff4a4540),
                         )),
                     ],
                   ),
                 ),
-                 ),
+              ),
             ],
           ),
         ],
