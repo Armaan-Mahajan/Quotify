@@ -16,12 +16,14 @@ By 18th December:
 By 19th December:
 - Copy to clipboard: Quote and Speaker are copied to clipboard: “$quote - $speakerName” [✓]
 
-By 20th December (Delayed)
+By 20th December:
+- Make the history navigation system work fully, and more advanced
+- Bug fixes
+
+By 21st December (Delayed)
 - Custom quote
     - User inputs a quote and speaker in a separate menu
     - This is reflected on the screen
     - If user attempts to go forward to a new random quote, or back in their quote history, the app provides a warning
 - Share feature also has to be added- users share the quote in .png format
 
-By 21st December:
-- Make the history navigation system work fully, and more advanced
