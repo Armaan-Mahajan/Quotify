@@ -17,8 +17,8 @@ By 19th December:
 - Copy to clipboard: Quote and Speaker are copied to clipboard: “$quote - $speakerName” [✓]
 
 By 20th December:
-- Make the history navigation system work fully, and more advanced
-- Bug fixes
+- Make the history navigation system work fully, and more advanced [✓]
+- Bug fixes [✓]
 
 By 21st December (Delayed)
 - Custom quote
