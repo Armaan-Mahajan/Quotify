@@ -4,22 +4,23 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'dart:math';
-//import 'package:flutter/services.dart';
+import 'package:flutter/services.dart';
 
 class MainApp extends StatefulWidget {
   const MainApp({super.key});
 
   @override
-  _MainAppState createState() => _MainAppState();
+  MainAppState createState() => MainAppState();
 }
 
-class _MainAppState extends State<MainApp> with TickerProviderStateMixin {
+class MainAppState extends State<MainApp> with TickerProviderStateMixin {
   List<Map<String, String>> quoteHistory = [];
   int currentIndex = -1;
   String quote = 'Swipe to get a random quote!';
   String speaker = '';
   bool isLoading = false;
   double opacity = 1.0;
+  bool isNavigating = false;
 
   late AnimationController blobController1;
   late AnimationController blobController2;
@@ -67,26 +68,25 @@ class _MainAppState extends State<MainApp> with TickerProviderStateMixin {
 
     var random = Random();
     int indexNum = random.nextInt(485);
-    String url =
-        'https://appcollection.in/quotify/fetch-quote.php?id=$indexNum';
+    String url = 'https://appcollection.in/quotify/fetch-quote.php?id=$indexNum';
 
     try {
       final http.Response response = await http.get(Uri.parse(url));
+
       if (response.statusCode == 200) {
         var data = json.decode(response.body);
         String newQuote = data['quote'];
         String newSpeaker = data['speaker'];
 
         setState(() {
-          if (currentIndex == quoteHistory.length - 1) {
-            quoteHistory.add({'quote': newQuote, 'speaker': newSpeaker});
-            currentIndex++;
-          }
+          quoteHistory.add({'quote': newQuote, 'speaker': newSpeaker});
+          currentIndex = quoteHistory.length - 1;
 
           quote = newQuote;
           speaker = newSpeaker;
           isLoading = false;
         });
+
 
         Future.delayed(const Duration(milliseconds: 200), () {
           setState(() {
@@ -108,23 +108,36 @@ class _MainAppState extends State<MainApp> with TickerProviderStateMixin {
   }
 
   void navigateHistory(int direction) {
-    if (direction == -1 && currentIndex > 0) {
-      // Go to the previous quote
-      setState(() {
-        currentIndex--;
-        quote = quoteHistory[currentIndex]['quote']!;
-        speaker = quoteHistory[currentIndex]['speaker']!;
-      });
-    } else if (direction == 1 && currentIndex < quoteHistory.length - 1) {
-      // Go to the next quote
-      setState(() {
-        currentIndex++;
-        quote = quoteHistory[currentIndex]['quote']!;
-        speaker = quoteHistory[currentIndex]['speaker']!;
-      });
-    } else if (direction == 1) {
-      fetchData();
+    if (isNavigating) {
+      return;
     }
+
+    setState(() {
+      isNavigating = true;
+
+      if (quoteHistory.isNotEmpty) {
+        if (direction == -1 && currentIndex > 0) {
+          currentIndex--;
+        } else if (direction == 1 && currentIndex < quoteHistory.length - 1) {
+          currentIndex++;
+        } else if (direction == 1 && currentIndex == quoteHistory.length - 1) {
+          fetchData();
+        }
+
+        if (currentIndex >= 0 && currentIndex < quoteHistory.length) {
+          quote = quoteHistory[currentIndex]['quote']!;
+          speaker = quoteHistory[currentIndex]['speaker']!;
+        }
+      } else {
+        fetchData();
+      }
+    });
+
+    Future.delayed(const Duration(milliseconds: 500), () {
+      setState(() {
+        isNavigating = false;
+      });
+    });
   }
 
   @override
@@ -163,6 +176,7 @@ class _MainAppState extends State<MainApp> with TickerProviderStateMixin {
                       'Quotify',
                       style: GoogleFonts.playfairDisplay(
                         fontWeight: FontWeight.bold,
+                        color: Color(0xffad9c8e),
                         fontSize: 32,
                       ),
                     ),
@@ -197,7 +211,7 @@ class _MainAppState extends State<MainApp> with TickerProviderStateMixin {
                                   border: Border.all(
                                     color: Colors.grey.shade400,
                                     width: 1.5,
-                                  ), // Added border for the quote container
+                                  ),
                                 ),
                                 child: Text(
                                   quote,
@@ -209,7 +223,6 @@ class _MainAppState extends State<MainApp> with TickerProviderStateMixin {
                                   ),
                                 ),
                               ),
-                              const SizedBox(height: 7.5),
                               const SizedBox(height: 7.5),
                               Text(
                                 speaker,
@@ -224,9 +237,39 @@ class _MainAppState extends State<MainApp> with TickerProviderStateMixin {
                       ),
                       if (isLoading)
                         const Center(
-                            child: CircularProgressIndicator(
-                          color: Color(0xff4a4540),
-                        )),
+                          child: CircularProgressIndicator(
+                            color: Color(0xff4a4540),
+                          ),
+                        ),
+                      Positioned(
+                        bottom: 30,
+                        left: MediaQuery.of(context).size.width / 2 - 30,
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            shape: const CircleBorder(),
+                            padding: const EdgeInsets.all(20),
+                            backgroundColor: Colors.white,
+                          ),
+                          onPressed: () {
+                            Clipboard.setData(ClipboardData(text: '$quote - $speaker')).then((_) {
+                              if (mounted) {
+                                WidgetsBinding.instance.addPostFrameCallback((_) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('Quote copied!'),
+                                    ),
+                                  );
+                                });
+                              }
+                            });
+                          },
+                          child: const Icon(
+                            Icons.copy,
+                            color: Color(0xff4a4540),
+                            size: 28.0,
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 ),
