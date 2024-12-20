@@ -21,7 +21,7 @@ By 20th December:
 - Bug fixes [✓]
 
 By 21st December (Delayed)
-- Custom quote
+- Custom quote [✓]
     - User inputs a quote and speaker in a separate menu
     - This is reflected on the screen
     - If user attempts to go forward to a new random quote, or back in their quote history, the app provides a warning
