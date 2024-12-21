@@ -9,6 +9,8 @@ Major features:
 - Users can also share their quotes in the form of a .png or .jpeg file
 - Lastly, users can create custom quotes and provide custom authors for the such
 
+<h1> Version 1.0 </h1> 
+
 Changes to be made:
 By 18th December:
 - Animations to be added behind the quotes- use E8D59E, D9BBB0 [✓]
@@ -25,5 +27,4 @@ By 21st December (Delayed)
     - User inputs a quote and speaker in a separate menu
     - This is reflected on the screen
     - If user attempts to go forward to a new random quote, or back in their quote history, the app provides a warning
-- Share feature also has to be added- users share the quote in .png format
-
+- Quote sharing- users can share the quote in .png format [✓]
