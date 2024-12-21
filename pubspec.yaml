@@ -27,3 +27,4 @@ flutter:
   uses-material-design: true
   assets:
     - assets/images/applogo.png
+    - assets/images/quotemark.png
