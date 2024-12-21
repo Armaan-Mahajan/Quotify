@@ -30,7 +30,7 @@ Quotify is a sleek and intuitive app designed to inspire you with random quotes 
 
 1. Clone the repository:
     ```bash
-    git clone https://github.com/your-username/quotify.git
+    git clone https://github.com/Armaan-Mahajan/Quotify.git
     ```
 
 2. Install dependencies:
