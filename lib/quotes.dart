@@ -5,6 +5,10 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'dart:math';
 import 'package:flutter/services.dart';
+import 'package:screenshot/screenshot.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
+import 'dart:io';
 
 class MainApp extends StatefulWidget {
   const MainApp({super.key});
@@ -23,12 +27,14 @@ class MainAppState extends State<MainApp> with TickerProviderStateMixin {
   bool isNavigating = false;
   String? customQuote;
   String? customSpeaker;
-  Color fieldBorderColor = Colors.grey.shade400; // Default border color
+  Color fieldBorderColor = Colors.grey.shade400;
 
   late AnimationController blobController1;
   late AnimationController blobController2;
   late Animation<Offset> blobAnimation1;
   late Animation<Offset> blobAnimation2;
+
+  ScreenshotController screenshotController = ScreenshotController();
 
   @override
   void initState() {
@@ -36,12 +42,14 @@ class MainAppState extends State<MainApp> with TickerProviderStateMixin {
     blobController1 = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 10),
-    )..repeat(reverse: true);
+    )
+      ..repeat(reverse: true);
 
     blobController2 = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 14),
-    )..repeat(reverse: true);
+    )
+      ..repeat(reverse: true);
 
     blobAnimation1 = Tween<Offset>(
       begin: Offset(0.2, 0.3),
@@ -64,32 +72,32 @@ class MainAppState extends State<MainApp> with TickerProviderStateMixin {
   }
 
   Future<void> fetchData() async {
-    // Check for existing custom quote
     if (customQuote != null || customSpeaker != null) {
       final shouldDiscard = await showDialog<bool>(
         context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('Warning'),
-          content: const Text(
-              'Viewing another quote will discard your custom quote. Continue?'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('Cancel'),
+        builder: (context) =>
+            AlertDialog(
+              title: const Text('Warning'),
+              content: const Text(
+                  'Viewing another quote will discard your custom quote. Continue?'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: const Text('Cancel'),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.pop(context, true),
+                  child: const Text('Continue'),
+                ),
+              ],
             ),
-            TextButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: const Text('Continue'),
-            ),
-          ],
-        ),
       );
-      if (shouldDiscard != true) return; // Abort fetch if not confirmed
+      if (shouldDiscard != true) return;
     }
 
     setState(() {
-      customQuote = null; // Reset custom quote
-      customSpeaker = null; // Reset custom speaker
+      customQuote = null;
+      customSpeaker = null;
       isLoading = true;
       opacity = 0.0;
     });
@@ -141,21 +149,22 @@ class MainAppState extends State<MainApp> with TickerProviderStateMixin {
         (customQuote != null || customSpeaker != null)) {
       final shouldDiscard = await showDialog<bool>(
         context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('Warning'),
-          content: const Text(
-              'Viewing a new quote will discard your custom quote. Continue?'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('Cancel'),
+        builder: (context) =>
+            AlertDialog(
+              title: const Text('Warning'),
+              content: const Text(
+                  'Viewing a new quote will discard your custom quote. Continue?'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: const Text('Cancel'),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.pop(context, true),
+                  child: const Text('Continue'),
+                ),
+              ],
             ),
-            TextButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: const Text('Continue'),
-            ),
-          ],
-        ),
       );
       if (shouldDiscard != true) return;
 
@@ -202,7 +211,9 @@ class MainAppState extends State<MainApp> with TickerProviderStateMixin {
         final speakerController = TextEditingController();
 
         return Padding(
-          padding: MediaQuery.of(context).viewInsets,
+          padding: MediaQuery
+              .of(context)
+              .viewInsets,
           child: Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -223,7 +234,6 @@ class MainAppState extends State<MainApp> with TickerProviderStateMixin {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Gradient Border TextField
                 Container(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
@@ -231,7 +241,7 @@ class MainAppState extends State<MainApp> with TickerProviderStateMixin {
                     ),
                     borderRadius: BorderRadius.circular(16),
                   ),
-                  padding: const EdgeInsets.all(2), // Border thickness
+                  padding: const EdgeInsets.all(2),
                   child: TextField(
                     controller: quoteController,
                     decoration: InputDecoration(
@@ -270,7 +280,7 @@ class MainAppState extends State<MainApp> with TickerProviderStateMixin {
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(16),
                         borderSide:
-                            BorderSide(color: fieldBorderColor, width: 1.5),
+                        BorderSide(color: fieldBorderColor, width: 1.5),
                       ),
                       contentPadding: const EdgeInsets.symmetric(
                         vertical: 15,
@@ -320,170 +330,263 @@ class MainAppState extends State<MainApp> with TickerProviderStateMixin {
     }
   }
 
+  Future<void> shareQuoteAsImage() async {
+    try {
+      final image = await screenshotController.capture();
+      if (image == null) return;
+
+      final directory = await getTemporaryDirectory();
+      final imagePath = File('${directory.path}/quote.png');
+      await imagePath.writeAsBytes(image);
+
+      await Share.shareXFiles([XFile(imagePath.path)],
+          text: 'Here is an inspiring quote!');
+    } catch (e) {
+      if (mounted) {  // Check if the widget is still mounted
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to share quote as image.')),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0x00f7e6ca),
       body: Stack(
         children: [
-          AnimatedBuilder(
-            animation: Listenable.merge([blobController1, blobController2]),
-            builder: (context, child) {
-              return CustomPaint(
-                painter: BlobPainter(
-                  blob1Position: blobAnimation1.value,
-                  blob2Position: blobAnimation2.value,
+          if (isLoading)
+            Positioned.fill(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircularProgressIndicator(
+                    color: Color(0xff4a4540),
+                  ),
+                ],
+              ),
+            ),
+          Column(children: [
+            SafeArea(
+              child: Container(
+                margin: const EdgeInsets.symmetric(vertical: 20.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Image.asset(
+                      'assets/images/applogo.png',
+                      width: 54,
+                      height: 54,
+                      fit: BoxFit.cover,
+                    ),
+                    const SizedBox(width: 10),
+                    Text(
+                      'Quotify',
+                      style: GoogleFonts.playfairDisplay(
+                        fontWeight: FontWeight.bold,
+                        color: const Color(0xff4a4540),
+                        fontSize: 32,
+                      ),
+                    ),
+                  ],
                 ),
-                size: MediaQuery.of(context).size,
-              );
-            },
-          ),
-          Column(
-            children: [
-              // Header and Logo
-              SafeArea(
-                child: Container(
-                  margin: const EdgeInsets.symmetric(vertical: 20.0),
+              ),
+            ),
+            Expanded(
+              child: GestureDetector(
+                onPanUpdate: (details) {
+                  if (details.delta.dx > 0) {
+                    navigateHistory(-1);
+                  } else if (details.delta.dx < 0) {
+                    navigateHistory(1);
+                  }
+                },
+                child: Screenshot(
+                  controller: screenshotController,
+                  child: Stack(
+                    children: [
+                      AnimatedBuilder(
+                        animation: Listenable.merge(
+                            [blobController1, blobController2]),
+                        builder: (context, child) {
+                          return CustomPaint(
+                            painter: BlobPainter(
+                              blob1Position: blobAnimation1.value,
+                              blob2Position: blobAnimation2.value,
+                            ),
+                            size: MediaQuery
+                                .of(context)
+                                .size,
+                          );
+                        },
+                      ),
+                      Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Expanded(
+                            child: GestureDetector(
+                              onPanUpdate: (details) {
+                                if (details.delta.dx > 0) {
+                                  navigateHistory(-1);
+                                } else if (details.delta.dx < 0) {
+                                  navigateHistory(1);
+                                }
+                              },
+                              child: Stack(
+                                children: [
+                                  AnimatedOpacity(
+                                    opacity: opacity,
+                                    duration:
+                                    const Duration(milliseconds: 500),
+                                    child: Center(
+                                      child: Column(
+                                        mainAxisAlignment:
+                                        MainAxisAlignment.center,
+                                        children: [
+                                          Container(
+                                            padding:
+                                            const EdgeInsets.all(20.0),
+                                            margin:
+                                            const EdgeInsets.symmetric(
+                                                horizontal: 20.0),
+                                            decoration: BoxDecoration(
+                                              color: const Color(0xFFFFFFFF),
+                                              borderRadius:
+                                              BorderRadius.circular(16.0),
+                                              border: Border.all(
+                                                color: Colors.grey.shade400,
+                                                width: 1.5,
+                                              ),
+                                            ),
+                                            child: Text(
+                                              quote,
+                                              textAlign: TextAlign.center,
+                                              style: TextStyle(
+                                                fontFamily: 'Noto Sans',
+                                                fontSize: 24,
+                                                color:
+                                                const Color(0xff331c08),
+                                              ),
+                                            ),
+                                          ),
+                                          const SizedBox(height: 7.5),
+                                          Text(
+                                            speaker,
+                                            textAlign: TextAlign.center,
+                                            style: TextStyle(
+                                              fontSize: 18,
+                                              color: const Color(0xff503823),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                  if (!isLoading)
+                                    Positioned(
+                                      bottom: 450,
+                                      left:
+                                      MediaQuery
+                                          .of(context)
+                                          .size
+                                          .width *
+                                          0.5 -
+                                          25,
+                                      child: AnimatedOpacity(
+                                        opacity: opacity,
+                                        duration:
+                                        const Duration(milliseconds: 500),
+                                        child: Image.asset(
+                                          'assets/images/quotemark.png',
+                                          width: 50,
+                                          height: 50,
+                                        ),
+                                      ),
+                                    )
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              left: MediaQuery
+                  .of(context)
+                  .size
+                  .width / 3 - 30,
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 20),
+                child: Center(
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Image.asset(
-                        'assets/images/applogo.png',
-                        width: 54,
-                        height: 54,
-                        fit: BoxFit.cover,
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          shape: const CircleBorder(),
+                          padding: const EdgeInsets.all(20),
+                          backgroundColor: Colors.white,
+                        ),
+                        onPressed: shareQuoteAsImage,
+                        child: const Icon(
+                          Icons.share,
+                          color: Color(0xff4a4540),
+                          size: 28.0,
+                        ),
                       ),
                       const SizedBox(width: 10),
-                      Text(
-                        'Quotify',
-                        style: GoogleFonts.playfairDisplay(
-                          fontWeight: FontWeight.bold,
-                          color: const Color(0xff4a4540),
-                          fontSize: 32,
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          shape: const CircleBorder(),
+                          padding: const EdgeInsets.all(20),
+                          backgroundColor: Colors.white,
+                        ),
+                        onPressed: setCustomQuote,
+                        child: const Icon(
+                          Icons.edit,
+                          color: Color(0xff4a4540),
+                          size: 28.0,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          shape: const CircleBorder(),
+                          padding: const EdgeInsets.all(20),
+                          backgroundColor: Colors.white,
+                        ),
+                        onPressed: () {
+                          Clipboard.setData(
+                              ClipboardData(text: '$quote - $speaker'))
+                              .then((_) {
+                            if (mounted) {
+                              WidgetsBinding.instance.addPostFrameCallback((_) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Quote copied!'),
+                                  ),
+                                );
+                              });
+                            }
+                          });
+                        },
+                        child: const Icon(
+                          Icons.copy,
+                          color: Color(0xff4a4540),
+                          size: 28.0,
                         ),
                       ),
                     ],
                   ),
                 ),
               ),
-              // Quote Section
-              Expanded(
-                child: GestureDetector(
-                  onPanUpdate: (details) {
-                    if (details.delta.dx > 0) {
-                      navigateHistory(-1);
-                    } else if (details.delta.dx < 0) {
-                      navigateHistory(1);
-                    }
-                  },
-                  child: Stack(
-                    children: [
-                      // Display Quote
-                      AnimatedOpacity(
-                        opacity: opacity,
-                        duration: const Duration(milliseconds: 500),
-                        child: Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(20.0),
-                                margin: const EdgeInsets.symmetric(
-                                    horizontal: 20.0),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFFFFFFF),
-                                  borderRadius: BorderRadius.circular(16.0),
-                                  border: Border.all(
-                                    color: Colors.grey.shade400,
-                                    width: 1.5,
-                                  ),
-                                ),
-                                child: Text(
-                                  quote,
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    fontFamily: 'Noto Sans',
-                                    fontSize: 24,
-                                    color: const Color(0xff331c08),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: 7.5),
-                              Text(
-                                speaker,
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                    fontSize: 18,
-                                    color: const Color(0xff503823)),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      if (isLoading)
-                        const Center(
-                          child: CircularProgressIndicator(
-                            color: Color(0xff4a4540),
-                          ),
-                        ),
-                      // Buttons
-                      Positioned(
-                        bottom: 30,
-                        left: MediaQuery.of(context).size.width / 2 - 30,
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                shape: const CircleBorder(),
-                                padding: const EdgeInsets.all(20),
-                                backgroundColor: Colors.white,
-                              ),
-                              onPressed: setCustomQuote,
-                              child: const Icon(
-                                Icons.edit,
-                                color: Color(0xff4a4540),
-                                size: 28.0,
-                              ),
-                            ),
-                            const SizedBox(width: 20),
-                            ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                shape: const CircleBorder(),
-                                padding: const EdgeInsets.all(20),
-                                backgroundColor: Colors.white,
-                              ),
-                              onPressed: () {
-                                Clipboard.setData(ClipboardData(
-                                        text: '$quote - $speaker'))
-                                    .then((_) {
-                                  if (mounted) {
-                                    WidgetsBinding.instance
-                                        .addPostFrameCallback((_) {
-                                      ScaffoldMessenger.of(context)
-                                          .showSnackBar(
-                                        const SnackBar(
-                                          content: Text('Quote copied!'),
-                                        ),
-                                      );
-                                    });
-                                  }
-                                });
-                              },
-                              child: const Icon(
-                                Icons.copy,
-                                color: Color(0xff4a4540),
-                                size: 28.0,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
+            ),
+          ],
           ),
         ],
       ),
