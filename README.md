@@ -43,7 +43,7 @@ Quotify is a sleek and intuitive app designed to inspire you with random quotes 
     flutter run
     ```
 
-##Downloading
+## Downloading
 Currently, quotify isn't published on any major app distribution software.
 Expect to see it on the Google Play Store or Apple App store in a while
 
